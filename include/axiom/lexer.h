@@ -13,9 +13,10 @@ namespace axiom {
         [[nodiscard]] bool is_eof() const noexcept;
         [[nodiscard]] char peek() const noexcept;
         char advance() noexcept;
+        void skip_whitespace_and_comments() noexcept;
 
         std::string_view m_source;
         size_t m_cursor = 0;
-        SourceLocation m_loc{.line = 1, .column = 1};
+        SourceLocation m_loc{ .line = 1, .column = 1 };
     };
 } // namespace axiom
