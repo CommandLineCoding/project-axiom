@@ -22,6 +22,8 @@ MESSAGE(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 
 OPTION(BUILD_TESTING "Build tests" ON)
 
+ADD_SUBDIRECTORY(src/support)
+
 ADD_EXECUTABLE(axiom src/main.cpp)
 
 TARGET_COMPILE_DEFINITIONS(axiom PRIVATE ${LLVM_DEFINITIONS})
@@ -32,4 +34,7 @@ LLVM_MAP_COMPONENTS_TO_LIBNAMES(llvm_libs Core Analysis ExecutionEngine OrcJIT S
 
 SET_PROJECT_WARNINGS(axiom)
 
-TARGET_LINK_LIBRARIES(axiom PRIVATE ${llvm_libs})
+TARGET_LINK_LIBRARIES(axiom PRIVATE
+    axiom_support
+    ${llvm_libs}
+)
