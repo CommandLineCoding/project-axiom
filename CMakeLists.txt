@@ -23,6 +23,7 @@ MESSAGE(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 OPTION(BUILD_TESTING "Build tests" ON)
 
 ADD_SUBDIRECTORY(src/support)
+ADD_SUBDIRECTORY(src/lexer)
 
 ADD_EXECUTABLE(axiom src/main.cpp)
 
@@ -36,5 +37,6 @@ SET_PROJECT_WARNINGS(axiom)
 
 TARGET_LINK_LIBRARIES(axiom PRIVATE
     axiom_support
+    axiom_lexer
     ${llvm_libs}
 )
