@@ -1,17 +1,21 @@
 #pragma once
 #include <string_view>
-#include "axiom/support/source_location.h"
+#include "axiom/token.h"
+#include "axiom/support/error.h"
 
 namespace axiom {
+    class Lexer {
+    public:
+        explicit Lexer(std::string_view source) : m_source(source) {}
+        Expected<Token> next_token();
 
-class Lexer {
-public:
-    explicit Lexer(std::string_view source) : m_source(source) {}
+    private:
+        [[nodiscard]] bool is_eof() const noexcept;
+        [[nodiscard]] char peek() const noexcept;
+        char advance() noexcept;
 
-private:
-    std::string_view m_source;
-    size_t m_cursor = 0;
-    SourceLocation m_loc{};
-};
-
+        std::string_view m_source;
+        size_t m_cursor = 0;
+        SourceLocation m_loc{.line = 1, .column = 1};
+    };
 } // namespace axiom
