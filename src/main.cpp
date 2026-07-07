@@ -1,25 +1,24 @@
-#include "axiom/lexer.h"
+#include "axiom/ast.h"
 #include <print>
+#include <vector>
+#include <memory>
 
 int main() {
-    std::println(">_ Testing Numeric Literals");
+    std::println(">_ Testing AST Initial Nodes");
 
-    std::string_view sample_code = "def volume(r) 4.188 * r * r * r # 4/3 * pi";
-    axiom::Lexer lexer(sample_code);
+    std::vector<std::unique_ptr<axiom::ExprAST>> expressions;
 
-    while (true) {
-        auto token_res = lexer.next_token();
-        if (!token_res) {
-            axiom::report_error(token_res.error());
-            break;
-        }
+    expressions.push_back(std::make_unique<axiom::NumExpr>(3.14));
+    expressions.push_back(std::make_unique<axiom::VarExpr>("my_variable"));
 
-        std::println("Lexed element -> {}", *token_res);
-
-        if (token_res->kind == axiom::TokenKind::Eof) {
-            break;
+    for (const auto& expr : expressions) {
+        if (auto* num = dynamic_cast<axiom::NumExpr*>(expr.get())) {
+            std::println("Found Literal Number Node: {}", num->val());
+        } else if (auto* var = dynamic_cast<axiom::VarExpr*>(expr.get())) {
+            std::println("Found Variable Reference Node: {}", var->name());
         }
     }
 
+    std::println("AST memory cleaned up automatically via unique_ptr.");
     return 0;
 }
