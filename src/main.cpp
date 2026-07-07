@@ -5,35 +5,51 @@
 #include <utility>
 
 int main() {
-    std::println(">_ Running Operator Precedence Parser Test");
+    std::println(">_ Running Full Grammar Frontend Integration Test");
 
-    std::string_view sample_code = "x + 4.0 * y";
-    axiom::Lexer lexer(sample_code);
+    std::string_view source_program = 
+        "extern sin(x)\n"
+        "def volume(r) 4.18 * r * r\n"
+        "volume(2.5)";
+
+    axiom::Lexer lexer(source_program);
     axiom::Parser parser(std::move(lexer));
 
-    auto ast_result = parser.parse_top_level_expression();
-
-    if (!ast_result) {
-        axiom::report_error(ast_result.error());
-        return 1;
-    }
-
-    std::println("AST successfully generated with operator weights calculated!");
-    
-    if (auto* root_bin = dynamic_cast<axiom::BinaryExpr*>(ast_result->get())) {
-        std::println("Root Operation Node: '{}'", root_bin->op());
-        
-        if (auto* left = dynamic_cast<const axiom::VarExpr*>(root_bin->lhs())) {
-            std::println(" -> Left side is variable: '{}'", left->name());
-        }
-        
-        if (auto* right_bin = dynamic_cast<const axiom::BinaryExpr*>(root_bin->rhs())) {
-            std::println(" -> Right side correctly nested tighter operation: '{}'", right_bin->op());
-            if (auto* inner_num = dynamic_cast<const axiom::NumExpr*>(right_bin->lhs())) {
-                std::println("     -> Inner Left: {}", inner_num->val());
+    while (!parser.is_eof()) {
+        switch (parser.current_tok_kind()) {
+            case axiom::TokenKind::Extern: {
+                auto ext_node = parser.parse_extern();
+                if (ext_node) {
+                    std::println("Parsed 'extern' mapping target: {}", (*ext_node)->name());
+                } else {
+                    axiom::report_error(ext_node.error());
+                    return 1;
+                }
+                break;
+            }
+            case axiom::TokenKind::Def: {
+                auto func_node = parser.parse_definition();
+                if (func_node) {
+                    std::println("Parsed 'def' code block: {}", (*func_node)->proto()->name());
+                } else {
+                    axiom::report_error(func_node.error());
+                    return 1;
+                }
+                break;
+            }
+            default: {
+                auto anon_node = parser.parse_top_level_expression();
+                if (anon_node) {
+                    std::println("Parsed standalone expression wrapped into: {}", (*anon_node)->proto()->name());
+                } else {
+                    axiom::report_error(anon_node.error());
+                    return 1;
+                }
+                break;
             }
         }
     }
 
+    std::println("Parser Frontend completed successfully!");
     return 0;
 }

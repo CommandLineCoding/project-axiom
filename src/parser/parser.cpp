@@ -1,6 +1,8 @@
 #include "axiom/parser.h"
 #include <charconv>
 #include <utility>
+#include <vector>
+#include <string>
 
 namespace axiom {
 
@@ -112,7 +114,6 @@ Expected<std::unique_ptr<ExprAST>> Parser::parse_primary() {
     });
 }
 
-
 Expected<std::unique_ptr<ExprAST>> Parser::parse_bin_op_rhs(int expr_prec, std::unique_ptr<ExprAST> lhs) {
     while (true) {
         int tok_prec = get_tok_precedence();
@@ -140,8 +141,64 @@ Expected<std::unique_ptr<ExprAST>> Parser::parse_expression() {
     return parse_bin_op_rhs(0, std::move(*lhs));
 }
 
-Expected<std::unique_ptr<ExprAST>> Parser::parse_top_level_expression() {
-    return parse_expression();
+Expected<std::unique_ptr<Prototype>> Parser::parse_prototype() {
+    if (m_current_tok.kind != TokenKind::Identifier) {
+        return std::unexpected(CompilerError{
+            .message = "Expected function name in prototype signature",
+            .location = m_current_tok.location
+        });
+    }
+
+    std::string fn_name(m_current_tok.lexeme);
+    consume(); 
+
+    if (m_current_tok.lexeme != "(") {
+        return std::unexpected(CompilerError{
+            .message = "Expected '(' after function name in signature",
+            .location = m_current_tok.location
+        });
+    }
+    consume(); 
+
+    std::vector<std::string> arg_names;
+    while (m_current_tok.kind == TokenKind::Identifier) {
+        arg_names.emplace_back(m_current_tok.lexeme);
+        consume();
+    }
+
+    if (m_current_tok.lexeme != ")") {
+        return std::unexpected(CompilerError{
+            .message = "Expected closing ')' after prototype parameters",
+            .location = m_current_tok.location
+        });
+    }
+    consume(); 
+
+    return std::make_unique<Prototype>(fn_name, std::move(arg_names));
+}
+
+Expected<std::unique_ptr<FuncNode>> Parser::parse_definition() {
+    consume();
+    
+    auto proto = parse_prototype();
+    if (!proto) return std::unexpected(proto.error());
+
+    auto body = parse_expression();
+    if (!body) return std::unexpected(body.error());
+
+    return std::make_unique<FuncNode>(std::move(*proto), std::move(*body));
+}
+
+Expected<std::unique_ptr<Prototype>> Parser::parse_extern() {
+    consume();
+    return parse_prototype();
+}
+
+Expected<std::unique_ptr<FuncNode>> Parser::parse_top_level_expression() {
+    auto expr = parse_expression();
+    if (!expr) return std::unexpected(expr.error());
+    auto proto = std::make_unique<Prototype>("__anon_expr", std::vector<std::string>{});
+    return std::make_unique<FuncNode>(std::move(proto), std::move(*expr));
 }
 
 } // namespace axiom

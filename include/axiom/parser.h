@@ -10,20 +10,22 @@ namespace axiom {
 class Parser {
 public:
     explicit Parser(Lexer lexer);
-
-    Expected<std::unique_ptr<ExprAST>> parse_top_level_expression();
+    Expected<std::unique_ptr<FuncNode>> parse_definition();
+    Expected<std::unique_ptr<Prototype>> parse_extern();
+    Expected<std::unique_ptr<FuncNode>> parse_top_level_expression();
+    [[nodiscard]] bool is_eof() const noexcept { return m_current_tok.kind == TokenKind::Eof; }
+    [[nodiscard]] TokenKind current_tok_kind() const noexcept { return m_current_tok.kind; }
 
 private:
     void consume() noexcept;
-    
     Expected<std::unique_ptr<ExprAST>> parse_primary();
     Expected<std::unique_ptr<ExprAST>> parse_number_expr();
     Expected<std::unique_ptr<ExprAST>> parse_identifier_expr();
     Expected<std::unique_ptr<ExprAST>> parse_paren_expr();
     Expected<std::unique_ptr<ExprAST>> parse_expression();
-
     [[nodiscard]] int get_tok_precedence() noexcept;
     Expected<std::unique_ptr<ExprAST>> parse_bin_op_rhs(int expr_prec, std::unique_ptr<ExprAST> lhs);
+    Expected<std::unique_ptr<Prototype>> parse_prototype();
 
     Lexer m_lexer;
     Token m_current_tok{};
