@@ -5,9 +5,9 @@
 #include <utility>
 
 int main() {
-    std::println(">_ Running Primary Expression Parser Test");
+    std::println(">_ Running Operator Precedence Parser Test");
 
-    std::string_view sample_code = "foo(42.0, x)";
+    std::string_view sample_code = "x + 4.0 * y";
     axiom::Lexer lexer(sample_code);
     axiom::Parser parser(std::move(lexer));
 
@@ -18,17 +18,20 @@ int main() {
         return 1;
     }
 
-    std::println("Parser successfully generated an AST tree configuration structure!");
-  
-    if (auto* call = dynamic_cast<axiom::CallExpr*>(ast_result->get())) {
-        std::println("Root Node: Function call to target -> '{}'", call->callee());
-        std::println("Arguments parsed count: {}", call->args().size());
+    std::println("AST successfully generated with operator weights calculated!");
+    
+    if (auto* root_bin = dynamic_cast<axiom::BinaryExpr*>(ast_result->get())) {
+        std::println("Root Operation Node: '{}'", root_bin->op());
         
-        if (auto* arg1 = dynamic_cast<axiom::NumExpr*>(call->args()[0].get())) {
-            std::println(" -> Argument 1 Type: Numeric Literal containing -> {}", arg1->val());
+        if (auto* left = dynamic_cast<const axiom::VarExpr*>(root_bin->lhs())) {
+            std::println(" -> Left side is variable: '{}'", left->name());
         }
-        if (auto* arg2 = dynamic_cast<axiom::VarExpr*>(call->args()[1].get())) {
-            std::println(" -> Argument 2 Type: Variable Pointer referencing -> '{}'", arg2->name());
+        
+        if (auto* right_bin = dynamic_cast<const axiom::BinaryExpr*>(root_bin->rhs())) {
+            std::println(" -> Right side correctly nested tighter operation: '{}'", right_bin->op());
+            if (auto* inner_num = dynamic_cast<const axiom::NumExpr*>(right_bin->lhs())) {
+                std::println("     -> Inner Left: {}", inner_num->val());
+            }
         }
     }
 

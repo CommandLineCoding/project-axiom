@@ -22,6 +22,9 @@ private:
     Expected<std::unique_ptr<ExprAST>> parse_paren_expr();
     Expected<std::unique_ptr<ExprAST>> parse_expression();
 
+    [[nodiscard]] int get_tok_precedence() noexcept;
+    Expected<std::unique_ptr<ExprAST>> parse_bin_op_rhs(int expr_prec, std::unique_ptr<ExprAST> lhs);
+
     Lexer m_lexer;
     Token m_current_tok{};
 };
