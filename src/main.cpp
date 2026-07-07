@@ -2,8 +2,9 @@
 #include <print>
 
 int main() {
-    std::println(">_ Testing Identifiers & Keywords");
-    std::string_view sample_code = "def calculate_area extern pi my_var123";
+    std::println(">_ Testing Numeric Literals");
+
+    std::string_view sample_code = "def volume(r) 4.188 * r * r * r # 4/3 * pi";
     axiom::Lexer lexer(sample_code);
 
     while (true) {

@@ -66,16 +66,46 @@ Expected<Token> Lexer::next_token() {
         std::string_view lexeme = m_source.substr(start_cursor, m_cursor - start_cursor);
         
         TokenKind kind = TokenKind::Identifier;
-        if (lexeme == "def")
-        kind = TokenKind::Def;
-        else if (lexeme == "extern")
-        kind = TokenKind::Extern;
-        
+        if (lexeme == "def") {
+            kind = TokenKind::Def;
+        } else if (lexeme == "extern") {
+            kind = TokenKind::Extern;
+        }
+
         return Token{
             .kind = kind,
             .lexeme = lexeme,
             .location = token_start
         };
+    }
+
+    if (std::isdigit(c) || c == '.') {
+        
+        if (c == '.' && (m_cursor + 1 >= m_source.size() || !std::isdigit(m_source[m_cursor + 1]))) {
+            
+        } else {
+            SourceLocation token_start = m_loc;
+            size_t start_cursor = m_cursor;
+
+            while (!is_eof() && std::isdigit(peek())) {
+                advance();
+            }
+
+            if (!is_eof() && peek() == '.') {
+                advance();
+
+                while (!is_eof() && std::isdigit(peek())) {
+                    advance();
+                }
+            }
+
+            std::string_view lexeme = m_source.substr(start_cursor, m_cursor - start_cursor);
+            return Token{
+                .kind = TokenKind::Number,
+                .lexeme = lexeme,
+                .location = token_start
+            };
+        }
     }
 
     SourceLocation token_start = m_loc;
