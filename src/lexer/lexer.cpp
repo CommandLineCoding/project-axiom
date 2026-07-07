@@ -1,5 +1,6 @@
 #include "axiom/lexer.h"
 #include <print>
+#include <cctype>
 
 namespace axiom {
 
@@ -30,21 +31,13 @@ char Lexer::advance() noexcept {
 void Lexer::skip_whitespace_and_comments() noexcept {
     while (!is_eof()) {
         char c = peek();
-        
-        // Handle standard whitespace
         if (c == ' ' || c == '\t' || c == '\r' || c == '\n') {
             advance();
-        }
-
-        // Handle line comments
-        else if (c == '#') {
+        } else if (c == '#') {
             while (!is_eof() && peek() != '\n') {
                 advance();
             }
-        }
-
-        // break the skipping sequence
-        else {
+        } else {
             break;
         }
     }
@@ -61,15 +54,37 @@ Expected<Token> Lexer::next_token() {
         };
     }
 
+    char c = peek();
+
+    if (std::isalpha(c) || c == '_') {
+        SourceLocation token_start = m_loc;
+        size_t start_cursor = m_cursor;
+
+        while (!is_eof() && (std::isalnum(peek()) || peek() == '_'))
+        advance();
+        
+        std::string_view lexeme = m_source.substr(start_cursor, m_cursor - start_cursor);
+        
+        TokenKind kind = TokenKind::Identifier;
+        if (lexeme == "def")
+        kind = TokenKind::Def;
+        else if (lexeme == "extern")
+        kind = TokenKind::Extern;
+        
+        return Token{
+            .kind = kind,
+            .lexeme = lexeme,
+            .location = token_start
+        };
+    }
+
     SourceLocation token_start = m_loc;
     size_t start_cursor = m_cursor;
-    
     advance(); 
     
-    std::string_view lexeme = m_source.substr(start_cursor, 1);
     return Token{
         .kind = TokenKind::Op,
-        .lexeme = lexeme,
+        .lexeme = m_source.substr(start_cursor, 1),
         .location = token_start
     };
 }

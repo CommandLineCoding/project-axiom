@@ -2,14 +2,8 @@
 #include <print>
 
 int main() {
-    std::println(">_ Testing Skip Mechanics");
- 
-    std::string_view sample_code = 
-        "  # This is a comment line\n"
-        "+\n"
-        "   # Another nested comment\n"
-        "-\t*";
-
+    std::println(">_ Testing Identifiers & Keywords");
+    std::string_view sample_code = "def calculate_area extern pi my_var123";
     axiom::Lexer lexer(sample_code);
 
     while (true) {
