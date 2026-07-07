@@ -24,6 +24,7 @@ OPTION(BUILD_TESTING "Build tests" ON)
 
 ADD_SUBDIRECTORY(src/support)
 ADD_SUBDIRECTORY(src/lexer)
+ADD_SUBDIRECTORY(src/parser)
 
 ADD_EXECUTABLE(axiom src/main.cpp)
 
@@ -36,7 +37,8 @@ LLVM_MAP_COMPONENTS_TO_LIBNAMES(llvm_libs Core Analysis ExecutionEngine OrcJIT S
 SET_PROJECT_WARNINGS(axiom)
 
 TARGET_LINK_LIBRARIES(axiom PRIVATE
-    axiom_support
+    axiom_parser    
     axiom_lexer
+    axiom_support
     ${llvm_libs}
 )
