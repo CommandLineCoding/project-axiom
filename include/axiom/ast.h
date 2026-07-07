@@ -56,4 +56,30 @@ private:
     std::vector<std::unique_ptr<ExprAST>> m_args;
 };
 
+class Prototype {
+public:
+    Prototype(std::string name, std::vector<std::string> args)
+        : m_name(std::move(name)), m_args(std::move(args)) {}
+
+    [[nodiscard]] const std::string& name() const noexcept { return m_name; }
+    [[nodiscard]] const std::vector<std::string>& args() const noexcept { return m_args; }
+
+private:
+    std::string m_name;
+    std::vector<std::string> m_args;
+};
+
+class FuncNode {
+public:
+    FuncNode(std::unique_ptr<Prototype> proto, std::unique_ptr<ExprAST> body)
+        : m_proto(std::move(proto)), m_body(std::move(body)) {}
+
+    [[nodiscard]] const Prototype* proto() const noexcept { return m_proto.get(); }
+    [[nodiscard]] const ExprAST* body() const noexcept { return m_body.get(); }
+
+private:
+    std::unique_ptr<Prototype> m_proto;
+    std::unique_ptr<ExprAST> m_body;
+};
+
 } // namespace axiom
