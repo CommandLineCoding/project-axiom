@@ -3,17 +3,26 @@
 #include <memory>
 #include <vector>
 
+namespace llvm {
+class Value;
+class Function;
+} // namespace llvm
+
 namespace axiom {
+class CodeGenerator;
 
 class ExprAST {
 public:
     virtual ~ExprAST() = default;
+    virtual llvm::Value* codegen(CodeGenerator& cg) = 0;
 };
 
 class NumExpr : public ExprAST {
 public:
     explicit NumExpr(double val) : m_val(val) {}
     [[nodiscard]] double val() const noexcept { return m_val; }
+    
+    llvm::Value* codegen(CodeGenerator& cg) override;
 
 private:
     double m_val;
@@ -23,6 +32,8 @@ class VarExpr : public ExprAST {
 public:
     explicit VarExpr(std::string name) : m_name(std::move(name)) {}
     [[nodiscard]] const std::string& name() const noexcept { return m_name; }
+    
+    llvm::Value* codegen(CodeGenerator& cg) override;
 
 private:
     std::string m_name;
@@ -34,8 +45,8 @@ public:
         : m_op(op), m_lhs(std::move(lhs)), m_rhs(std::move(rhs)) {}
 
     [[nodiscard]] char op() const noexcept { return m_op; }
-    [[nodiscard]] const ExprAST* lhs() const noexcept { return m_lhs.get(); }
-    [[nodiscard]] const ExprAST* rhs() const noexcept { return m_rhs.get(); }
+    
+    llvm::Value* codegen(CodeGenerator& cg) override;
 
 private:
     char m_op;
@@ -48,8 +59,7 @@ public:
     CallExpr(std::string callee, std::vector<std::unique_ptr<ExprAST>> args)
         : m_callee(std::move(callee)), m_args(std::move(args)) {}
 
-    [[nodiscard]] const std::string& callee() const noexcept { return m_callee; }
-    [[nodiscard]] const std::vector<std::unique_ptr<ExprAST>>& args() const noexcept { return m_args; }
+    llvm::Value* codegen(CodeGenerator& cg) override;
 
 private:
     std::string m_callee;
@@ -62,7 +72,8 @@ public:
         : m_name(std::move(name)), m_args(std::move(args)) {}
 
     [[nodiscard]] const std::string& name() const noexcept { return m_name; }
-    [[nodiscard]] const std::vector<std::string>& args() const noexcept { return m_args; }
+    
+    llvm::Function* codegen(CodeGenerator& cg);
 
 private:
     std::string m_name;
@@ -74,8 +85,7 @@ public:
     FuncNode(std::unique_ptr<Prototype> proto, std::unique_ptr<ExprAST> body)
         : m_proto(std::move(proto)), m_body(std::move(body)) {}
 
-    [[nodiscard]] const Prototype* proto() const noexcept { return m_proto.get(); }
-    [[nodiscard]] const ExprAST* body() const noexcept { return m_body.get(); }
+    llvm::Function* codegen(CodeGenerator& cg);
 
 private:
     std::unique_ptr<Prototype> m_proto;
