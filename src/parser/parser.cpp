@@ -1,5 +1,5 @@
 #include "axiom/parser.h"
-#include <print>
+#include <charconv>
 #include <utility>
 
 namespace axiom {
@@ -12,7 +12,7 @@ void Parser::consume() noexcept {
     auto next = m_lexer.next_token();
     if (next) {
         m_current_tok = *next;
-    } else {        
+    } else {
         m_current_tok = Token{
             .kind = TokenKind::Eof,
             .lexeme = "",
@@ -21,8 +21,94 @@ void Parser::consume() noexcept {
     }
 }
 
-void Parser::parse_stub() {
-    std::println("Parser initialized successfully! Initial lookahead -> {}", m_current_tok);
+Expected<std::unique_ptr<ExprAST>> Parser::parse_number_expr() {
+    double val = 0.0;
+    auto [ptr, ec] = std::from_chars(m_current_tok.lexeme.data(), 
+                                     m_current_tok.lexeme.data() + m_current_tok.lexeme.size(), 
+                                     val);
+    
+    if (ec != std::errc{}) {
+        return std::unexpected(CompilerError{
+            .message = "Failed to parse numeric literal values",
+            .location = m_current_tok.location
+        });
+    }
+    
+    auto node = std::make_unique<NumExpr>(val);
+    consume();
+    return node;
+}
+
+Expected<std::unique_ptr<ExprAST>> Parser::parse_identifier_expr() {
+    std::string id_name(m_current_tok.lexeme);
+    SourceLocation id_loc = m_current_tok.location;
+    consume();
+
+    if (m_current_tok.lexeme != "(") {
+        return std::make_unique<VarExpr>(id_name);
+    }
+    
+    consume(); // step past '('
+    std::vector<std::unique_ptr<ExprAST>> args;
+    
+    if (m_current_tok.lexeme != ")") {
+        while (true) {
+            auto arg = parse_expression();
+            if (!arg) return arg;
+            args.push_back(std::move(*arg));
+
+            if (m_current_tok.lexeme == ")") break;
+
+            if (m_current_tok.lexeme != ",") {
+                return std::unexpected(CompilerError{
+                    .message = "Expected ',' or ')' inside parameter argument collection",
+                    .location = m_current_tok.location
+                });
+            }
+            consume();
+        }
+    }
+    consume();
+    return std::make_unique<CallExpr>(id_name, std::move(args));
+}
+
+Expected<std::unique_ptr<ExprAST>> Parser::parse_paren_expr() {
+    consume(); // step past '('
+    auto expr = parse_expression();
+    if (!expr) return expr;
+
+    if (m_current_tok.lexeme != ")") {
+        return std::unexpected(CompilerError{
+            .message = "Expected matching closing parenthesis ')'",
+            .location = m_current_tok.location
+        });
+    }
+    consume();
+    return expr;
+}
+
+Expected<std::unique_ptr<ExprAST>> Parser::parse_primary() {
+    switch (m_current_tok.kind) {
+        case TokenKind::Identifier: return parse_identifier_expr();
+        case TokenKind::Number:     return parse_number_expr();
+        case TokenKind::Op:
+            if (m_current_tok.lexeme == "(") return parse_paren_expr();
+            break;
+        default:
+            break;
+    }
+    return std::unexpected(CompilerError{
+        .message = "Unknown token type encountered when expecting an expression node",
+        .location = m_current_tok.location
+    });
+}
+
+Expected<std::unique_ptr<ExprAST>> Parser::parse_expression() {
+    return parse_primary();
+}
+
+Expected<std::unique_ptr<ExprAST>> Parser::parse_top_level_expression() {
+    return parse_expression();
 }
 
 } // namespace axiom
